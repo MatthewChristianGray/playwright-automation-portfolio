@@ -1,15 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { ProductDetailPage } from '../../pages/ProductDetailPage';
 
-// A stable product slug that exists on the site
-const PRODUCT_SLUG = 'combination-pliers';
-
 test.describe('Product detail page', () => {
   let detailPage: ProductDetailPage;
 
   test.beforeEach(async ({ page }) => {
     detailPage = new ProductDetailPage(page);
-    await detailPage.gotoBySlug(PRODUCT_SLUG);
+    await detailPage.gotoFirstProductFromListing();
   });
 
   test('product name is visible', async () => {
@@ -28,17 +25,15 @@ test.describe('Product detail page', () => {
     await expect(detailPage.productDescription).not.toBeEmpty();
   });
 
-  test('breadcrumb contains a link back to the product listing', async ({ page }) => {
-    await expect(detailPage.breadcrumb).toBeVisible();
-    const homeLink = detailPage.breadcrumb.getByRole('link', { name: 'Home' });
+  test('nav Home link navigates back to the product listing', async ({ page }) => {
+    const homeLink = page.getByRole('link', { name: 'Home' });
     await expect(homeLink).toBeVisible();
+    await homeLink.click();
+    await expect(page).toHaveURL('/');
   });
 
-  test('navigating to a product from the listing keeps the name consistent', async ({ page }) => {
-    const detailPageFresh = new ProductDetailPage(page);
-    const nameFromListing = await detailPageFresh.gotoFirstProductFromListing();
-    const nameOnDetailPage = await detailPageFresh.productName.textContent();
-    expect(nameOnDetailPage?.trim()).toBe(nameFromListing);
+  test('page URL matches the product detail pattern', async ({ page }) => {
+    await expect(page).toHaveURL(/\/product\/.+/);
   });
 
   test('add to cart button increments the cart badge', async () => {

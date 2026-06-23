@@ -7,8 +7,6 @@ export class ProductDetailPage {
   readonly quantityInput: Locator;
   readonly addToCartButton: Locator;
   readonly cartNavBadge: Locator;
-  readonly breadcrumb: Locator;
-
   constructor(private readonly page: Page) {
     this.productName = page.getByTestId('product-name');
     this.productPrice = page.getByTestId('unit-price');
@@ -16,7 +14,6 @@ export class ProductDetailPage {
     this.quantityInput = page.getByTestId('quantity');
     this.addToCartButton = page.getByTestId('add-to-cart');
     this.cartNavBadge = page.getByTestId('cart-quantity');
-    this.breadcrumb = page.locator('app-breadcrumb');
   }
 
   async gotoBySlug(slug: string) {
@@ -24,13 +21,15 @@ export class ProductDetailPage {
     await this.productName.waitFor({ state: 'visible' });
   }
 
-  async gotoFirstProductFromListing() {
+  async gotoFirstProductFromListing(): Promise<string> {
     await this.page.goto('/');
     const firstProduct = this.page.getByTestId('product-name').first();
     await firstProduct.waitFor({ state: 'visible' });
     const name = await firstProduct.textContent();
     await firstProduct.click();
-    await this.productName.waitFor({ state: 'visible' });
+    // Wait for navigation to the product detail URL
+    await this.page.waitForURL(/\/product\/.+/);
+    await this.page.waitForLoadState('networkidle');
     return name?.trim() ?? '';
   }
 

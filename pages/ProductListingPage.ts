@@ -23,7 +23,10 @@ export class ProductListingPage {
   async goto() {
     await this.page.goto('/');
     await this.sortDropdown.waitFor({ state: 'visible' });
+    await this.productNames.first().waitFor({ state: 'visible' });
   }
+
+  // ── Sort ────────────────────────────────────────────────────────────────────
 
   async sortBy(value: string) {
     await this.sortDropdown.scrollIntoViewIfNeeded();
@@ -31,6 +34,8 @@ export class ProductListingPage {
     await this.page.waitForLoadState('networkidle');
     await this.productNames.first().scrollIntoViewIfNeeded();
   }
+
+  // ── Price range slider ───────────────────────────────────────────────────────
 
   async setPriceRange(minPrice: number, maxPrice: number) {
     await this.sliderBar.scrollIntoViewIfNeeded();
@@ -56,6 +61,48 @@ export class ProductListingPage {
     return parseInt(await this.maxPriceHandle.getAttribute('aria-valuenow') ?? '200');
   }
 
+  // ── Category filters ─────────────────────────────────────────────────────────
+
+  async checkCategory(name: string) {
+    const checkbox = this.categoryCheckbox(name);
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.check();
+    await this.page.waitForLoadState('networkidle');
+    await this.productNames.first().scrollIntoViewIfNeeded();
+  }
+
+  async uncheckCategory(name: string) {
+    const checkbox = this.categoryCheckbox(name);
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.uncheck();
+    await this.page.waitForLoadState('networkidle');
+    await this.productNames.first().scrollIntoViewIfNeeded();
+  }
+
+  async areAllSubcategoriesChecked(parentName: string): Promise<boolean> {
+    const checkboxes = this.subcategoryCheckboxes(parentName);
+    const count = await checkboxes.count();
+    for (let i = 0; i < count; i++) {
+      if (!(await checkboxes.nth(i).isChecked())) return false;
+    }
+    return true;
+  }
+
+  async areAllSubcategoriesUnchecked(parentName: string): Promise<boolean> {
+    const checkboxes = this.subcategoryCheckboxes(parentName);
+    const count = await checkboxes.count();
+    for (let i = 0; i < count; i++) {
+      if (await checkboxes.nth(i).isChecked()) return false;
+    }
+    return true;
+  }
+
+  async getProductCount(): Promise<number> {
+    return this.productNames.count();
+  }
+
+  // ── Shared helpers ───────────────────────────────────────────────────────────
+
   async getProductNames(): Promise<string[]> {
     return this.productNames.allTextContents();
   }
@@ -63,6 +110,20 @@ export class ProductListingPage {
   async getProductPrices(): Promise<number[]> {
     const texts = await this.productPrices.allTextContents();
     return texts.map(t => parseFloat(t.replace('$', '')));
+  }
+
+  private categoryCheckbox(name: string): Locator {
+    return this.page
+      .locator('.checkbox label')
+      .filter({ hasText: name })
+      .locator('input');
+  }
+
+  private subcategoryCheckboxes(parentName: string): Locator {
+    return this.page
+      .locator('.checkbox')
+      .filter({ has: this.page.locator('label').filter({ hasText: parentName }) })
+      .locator('ul input[type="checkbox"]');
   }
 
   private async dragHandle(handle: Locator, targetX: number) {

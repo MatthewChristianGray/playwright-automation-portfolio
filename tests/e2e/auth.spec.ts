@@ -9,9 +9,9 @@ test.describe('Authentication', () => {
     await loginPage.goto();
   });
 
-  test('valid credentials log the user in and redirect to home', async ({ page }) => {
+  test('valid credentials log the user in and redirect to account', async ({ page }) => {
     await loginPage.loginAsTestUser();
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/account');
     await expect(loginPage.userMenu).toBeVisible();
   });
 
@@ -27,9 +27,8 @@ test.describe('Authentication', () => {
 
   test('empty form submission shows validation errors', async ({ page }) => {
     await loginPage.submitButton.click();
-    // Both fields are required — the page should not navigate away
     await expect(page).toHaveURL('/auth/login');
-    await expect(loginPage.emailInput).toBeFocused();
+    await expect(loginPage.emailInput).toHaveAttribute('aria-invalid', 'true');
   });
 
   test('logged-in user can sign out and is redirected to login', async ({ page }) => {

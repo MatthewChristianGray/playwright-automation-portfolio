@@ -19,7 +19,8 @@ export class LoginPage {
     this.submitButton = page.getByTestId('login-submit');
     this.loginError = page.getByTestId('login-error');
     this.navSignIn = page.getByTestId('nav-sign-in');
-    this.userMenu = page.getByTestId('nav-user-menu');
+    // After login the customer's name appears as a button in the nav menubar
+    this.userMenu = page.getByRole('button', { name: 'Jane Doe' });
   }
 
   async goto() {
@@ -35,12 +36,12 @@ export class LoginPage {
 
   async loginAsTestUser() {
     await this.login(TEST_USER.email, TEST_USER.password);
-    await this.page.waitForURL('/');
+    await this.page.waitForURL('/account');
   }
 
   async logout() {
     await this.userMenu.click();
-    await this.page.getByTestId('nav-sign-out').click();
+    await this.page.getByText('Sign out').click();
     await this.page.waitForURL('/auth/login');
   }
 }
